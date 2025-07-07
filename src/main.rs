@@ -7,6 +7,7 @@ fn main() -> anyhow::Result<()> {
                 .arg(clap::Arg::new("tag").required(true))
                 .arg(clap::Arg::new("file").required(true)),
         )
+        .subcommand(clap::Command::new("strip-pictures").arg(clap::Arg::new("file").required(true)))
         .subcommand_required(true)
         .get_matches();
 
@@ -20,6 +21,9 @@ fn main() -> anyhow::Result<()> {
                 sub_m.get_one::<String>("file").unwrap(),
             );
             Ok(())
+        }
+        Some(("strip-pictures", sub_m)) => {
+            antagonist::commands::strip_pictures(sub_m.get_one::<String>("file").unwrap())
         }
         Some((cmd, _)) => {
             eprintln!("Unknown command: {cmd}");
