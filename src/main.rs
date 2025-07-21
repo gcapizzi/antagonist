@@ -10,6 +10,11 @@ fn main() -> anyhow::Result<()> {
         .subcommand(
             clap::Command::new("remove-pictures").arg(clap::Arg::new("file").required(true)),
         )
+        .subcommand(
+            clap::Command::new("remove-tag")
+                .arg(clap::Arg::new("tag").required(true))
+                .arg(clap::Arg::new("file").required(true)),
+        )
         .subcommand_required(true)
         .get_matches();
 
@@ -27,6 +32,10 @@ fn main() -> anyhow::Result<()> {
         Some(("remove-pictures", sub_m)) => {
             antagonist::commands::remove_pictures(sub_m.get_one::<String>("file").unwrap())
         }
+        Some(("remove-tag", sub_m)) => antagonist::commands::remove_tag(
+            sub_m.get_one::<String>("tag").unwrap(),
+            sub_m.get_one::<String>("file").unwrap(),
+        ),
         Some((cmd, _)) => {
             eprintln!("Unknown command: {cmd}");
             std::process::exit(1);
