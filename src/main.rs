@@ -7,6 +7,7 @@ fn main() -> anyhow::Result<()> {
                 .arg(clap::Arg::new("tag").required(true))
                 .arg(clap::Arg::new("file").required(true)),
         )
+        .subcommand(clap::Command::new("remove-id3v1").arg(clap::Arg::new("file").required(true)))
         .subcommand(
             clap::Command::new("remove-pictures").arg(clap::Arg::new("file").required(true)),
         )
@@ -28,6 +29,9 @@ fn main() -> anyhow::Result<()> {
                 sub_m.get_one::<String>("file").unwrap(),
             );
             Ok(())
+        }
+        Some(("remove-id3v1", sub_m)) => {
+            antagonist::commands::remove_id3v1(sub_m.get_one::<String>("file").unwrap())
         }
         Some(("remove-pictures", sub_m)) => {
             antagonist::commands::remove_pictures(sub_m.get_one::<String>("file").unwrap())
