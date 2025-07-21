@@ -1,143 +1,82 @@
-use comfy_table::{Attribute, Cell, ContentArrangement, Table, presets::UTF8_FULL};
-use std::fmt::Write;
+use crossterm::style::Stylize;
 
 pub fn info(file: &str) -> anyhow::Result<()> {
     match metaflac::Tag::read_from_path(file) {
         Ok(tag) => {
-            let mut table = Table::new();
-            table
-                .load_preset(UTF8_FULL)
-                .set_content_arrangement(ContentArrangement::DynamicFullWidth)
-                .set_header(vec![
-                    Cell::new("FLAC").add_attribute(Attribute::Bold),
-                    Cell::new(""),
-                ]);
-
+            println!("{}", "FLAC".bold());
             for block in tag.blocks() {
                 match block {
                     metaflac::Block::StreamInfo(info) => {
-                        table.add_row(vec![
-                            Cell::new("Stream Info")
-                                .add_attributes(vec![Attribute::Italic, Attribute::Bold]),
-                            Cell::new(""),
-                        ]);
-                        table.add_row(vec![
-                            "Minimum block size (samples)",
-                            &info.min_block_size.to_string(),
-                        ]);
-                        table.add_row(vec![
-                            "Minimum block size (samples)",
-                            &info.min_block_size.to_string(),
-                        ]);
-                        table.add_row(vec![
-                            "Maximum block size (samples)",
-                            &info.max_block_size.to_string(),
-                        ]);
-                        table.add_row(vec![
-                            "Minimum frame size (bytes)",
-                            &info.max_frame_size.to_string(),
-                        ]);
-                        table.add_row(vec![
-                            "Minimum frame size (bytes)",
-                            &info.min_frame_size.to_string(),
-                        ]);
-                        table.add_row(vec!["Sample rate (Hz)", &info.sample_rate.to_string()]);
-                        table.add_row(vec!["Number of channels", &info.num_channels.to_string()]);
-                        table.add_row(vec!["Bits per sample", &info.bits_per_sample.to_string()]);
-                        table.add_row(vec!["Total samples", &info.total_samples.to_string()]);
-                        table.add_row(vec![
-                            "MD5",
+                        println!("* {}", "Stream Info:".italic());
+                        println!("  Minimum block size (samples): {}", &info.min_block_size);
+                        println!("  Minimum block size (samples): {}", &info.min_block_size,);
+                        println!("  Maximum block size (samples): {}", &info.max_block_size,);
+                        println!("  Minimum frame size (bytes): {}", &info.max_frame_size,);
+                        println!("  Minimum frame size (bytes): {}", &info.min_frame_size,);
+                        println!("  Sample rate (Hz): {}", &info.sample_rate);
+                        println!("  Number of channels: {}", &info.num_channels);
+                        println!("  Bits per sample: {}", &info.bits_per_sample);
+                        println!("  Total samples: {}", &info.total_samples);
+                        println!(
+                            "  MD5: {}",
                             &info
                                 .md5
                                 .iter()
                                 .map(|b| format!("{:02x}", b))
                                 .collect::<String>(),
-                        ]);
+                        );
                     }
                     metaflac::Block::VorbisComment(comment) => {
-                        table.add_row(vec![
-                            Cell::new("Vorbis Comment")
-                                .add_attributes(vec![Attribute::Italic, Attribute::Bold]),
-                            Cell::new(""),
-                        ]);
-                        table.add_row(vec!["Vendor", &comment.vendor_string]);
-                        table.add_row(vec![
-                            Cell::new("Comments").add_attribute(Attribute::Italic),
-                            Cell::new(""),
-                        ]);
+                        println!("* {}", "Vorbis Comment:".italic());
+                        println!("  Vendor: {}", &comment.vendor_string);
+                        println!("  Comments:");
                         for (key, value) in &comment.comments {
-                            table.add_row(vec![key, &value.join(", ")]);
+                            print!("  - {}: ", key);
+                            println_indented(&value.join(", "), 6);
                         }
                     }
                     metaflac::Block::Application(application) => {
-                        table.add_row(vec![
-                            Cell::new("Application")
-                                .add_attributes(vec![Attribute::Italic, Attribute::Bold]),
-                            Cell::new(""),
-                        ]);
-                        table.add_row(vec![
-                            "ID",
+                        println!("* {}", "Application:".italic());
+                        println!(
+                            "  ID: {}",
                             str::from_utf8(&application.id).unwrap_or_default(),
-                        ]);
-                        table.add_row(vec![
-                            "Data",
+                        );
+                        println!(
+                            "  Data: {}",
                             str::from_utf8(&application.data).unwrap_or_default(),
-                        ]);
+                        );
                     }
                     metaflac::Block::CueSheet(cue_sheet) => {
-                        table.add_row(vec![
-                            Cell::new("Cue Sheet")
-                                .add_attributes(vec![Attribute::Italic, Attribute::Bold]),
-                            Cell::new(""),
-                        ]);
-                        table.add_row(vec![
-                            "Media catalog number",
-                            &cue_sheet.catalog_num.to_string(),
-                        ]);
-                        table.add_row(vec![
-                            "Number of lead-in samples",
-                            &cue_sheet.num_leadin.to_string(),
-                        ]);
-                        table.add_row(vec!["Is CD", &cue_sheet.is_cd.to_string()]);
-                        table.add_row(vec![
-                            Cell::new("Tracks").add_attribute(Attribute::Italic),
-                            Cell::new(""),
-                        ]);
+                        println!("* {}", "Cue Sheet:".italic());
+                        println!("  Media catalog number: {}", &cue_sheet.catalog_num);
+                        println!("  Number of lead-in samples: {}", &cue_sheet.num_leadin);
+                        println!("  Is CD: {}", &cue_sheet.is_cd);
+                        println!("  Tracks:");
                         for track in &cue_sheet.tracks {
-                            let mut track_info = String::new();
-                            writeln!(track_info, "Offset (samples): {}", track.offset)?;
-                            writeln!(track_info, "Is audio: {}", track.is_audio)?;
-                            writeln!(track_info, "ISRC: {}", track.isrc)?;
-                            writeln!(track_info, "Pre-emphasis: {}", track.pre_emphasis)?;
-                            writeln!(track_info, "Indices:")?;
+                            println!("  - Offset (samples): {}", track.offset);
+                            println!("  - Is audio: {}", track.is_audio);
+                            println!("  - ISRC: {}", track.isrc);
+                            println!("  - Pre-emphasis: {}", track.pre_emphasis);
+                            println!("  - Indices:");
                             for index in &track.indices {
-                                writeln!(track_info, "- Point number: {}", index.point_num)?;
-                                writeln!(track_info, "  Offset (samples): {}", index.offset)?;
+                                println!("    . Point number: {}", index.point_num);
+                                println!("      Offset (samples): {}", index.offset);
                             }
-                            table.add_row(vec![&track.number.to_string(), &track_info]);
                         }
                     }
                     metaflac::Block::Padding(padding) => {
-                        table.add_row(vec![
-                            Cell::new("Padding (bytes)")
-                                .add_attributes(vec![Attribute::Italic, Attribute::Bold]),
-                            Cell::new(&padding.to_string()),
-                        ]);
+                        println!("* {} {}", "Padding (bytes):".italic(), padding);
                     }
                     metaflac::Block::Picture(picture) => {
-                        table.add_row(vec![
-                            Cell::new("Picture")
-                                .add_attributes(vec![Attribute::Italic, Attribute::Bold]),
-                            Cell::new(""),
-                        ]);
-                        table.add_row(vec!["Type", &format!("{:?}", picture.picture_type)]);
-                        table.add_row(vec!["Mime Type", &picture.mime_type]);
-                        table.add_row(vec!["Description", &picture.description]);
-                        table.add_row(vec!["Width", &picture.width.to_string()]);
-                        table.add_row(vec!["Height", &picture.height.to_string()]);
-                        table.add_row(vec!["Color Depth", &picture.depth.to_string()]);
-                        table.add_row(vec!["Number of Colors", &picture.num_colors.to_string()]);
-                        table.add_row(vec!["Data Length", &picture.data.len().to_string()]);
+                        println!("* {}", "Picture:".italic());
+                        println!("  Type: {:?}", picture.picture_type);
+                        println!("  Mime Type: {}", &picture.mime_type);
+                        println!("  Description: {}", &picture.description);
+                        println!("  Width: {}", &picture.width);
+                        println!("  Height: {}", &picture.height);
+                        println!("  Color Depth: {}", &picture.depth);
+                        println!("  Number of Colors: {}", &picture.num_colors);
+                        println!("  Data Length: {}", &picture.data.len());
                     }
                     metaflac::Block::SeekTable(_) => {
                         // skip
@@ -147,7 +86,6 @@ pub fn info(file: &str) -> anyhow::Result<()> {
                     }
                 }
             }
-            println!("{table}");
         }
         Err(metaflac::Error {
             kind: metaflac::ErrorKind::InvalidInput,
@@ -160,34 +98,27 @@ pub fn info(file: &str) -> anyhow::Result<()> {
 
     match id3::v1::Tag::read_from_path(file) {
         Ok(tag) => {
-            let mut table = Table::new();
-            table
-                .load_preset(UTF8_FULL)
-                .set_content_arrangement(ContentArrangement::DynamicFullWidth)
-                .set_header(vec![
-                    Cell::new("ID3v1").add_attribute(Attribute::Bold),
-                    Cell::new(""),
-                ]);
-            table.add_row(vec!["Title", &tag.title]);
-            table.add_row(vec!["Artist", &tag.artist]);
-            table.add_row(vec!["Album", &tag.album]);
-            table.add_row(vec!["Comment", &tag.comment]);
+            println!("{}", "ID3v1".bold());
+            println!("Title: {}", &tag.title);
+            println!("Artist: {}", &tag.artist);
+            println!("Album: {}", &tag.album);
+            print!("Comment: ");
+            println_indented(&tag.comment, 2);
             if let Some(track) = tag.track {
-                table.add_row(vec!["Track", &track.to_string()]);
+                println!("Track: {}", &track.to_string());
             }
             if let Some(genre) = tag.genre() {
-                table.add_row(vec!["Genre", &genre]);
+                println!("Genre: {}", &genre);
             }
             if let Some(speed) = tag.speed {
-                table.add_row(vec!["Speed", &speed.to_string()]);
+                println!("Speed: {}", &speed.to_string());
             }
             if let Some(start_time) = tag.start_time {
-                table.add_row(vec!["Start time", &start_time]);
+                println!("Start time: {}", &start_time);
             }
             if let Some(end_time) = tag.end_time {
-                table.add_row(vec!["End time", &end_time]);
+                println!("End time: {}", &end_time);
             }
-            println!("{table}");
         }
         Err(id3::Error {
             kind: id3::ErrorKind::NoTag,
@@ -200,23 +131,15 @@ pub fn info(file: &str) -> anyhow::Result<()> {
 
     match id3::Tag::read_from_path(file) {
         Ok(tag) => {
-            let mut table = Table::new();
-            table
-                .load_preset(UTF8_FULL)
-                .set_content_arrangement(ContentArrangement::DynamicFullWidth)
-                .set_header(vec![
-                    Cell::new("ID3v2").add_attribute(Attribute::Bold),
-                    Cell::new(""),
-                    Cell::new(""),
-                ]);
+            println!("{}", "ID3v2".bold());
             for frame in tag.frames() {
-                table.add_row(vec![
-                    frame.id(),
+                println!(
+                    "{} [{}]: {}",
                     frame.name(),
+                    frame.id(),
                     &crate::id3v2::content_string(frame.content()),
-                ]);
+                );
             }
-            println!("{table}");
         }
         Err(id3::Error {
             kind: id3::ErrorKind::NoTag,
@@ -228,4 +151,17 @@ pub fn info(file: &str) -> anyhow::Result<()> {
     }
 
     Ok(())
+}
+
+fn println_indented(text: &str, indent: usize) {
+    if text.contains('\n') {
+        let indent_str = " ".repeat(indent);
+
+        println!();
+        for line in text.lines() {
+            println!("{}{}", indent_str, line);
+        }
+    } else {
+        println!("{}", text);
+    }
 }
